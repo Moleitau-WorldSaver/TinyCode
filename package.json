@@ -1,0 +1,24 @@
+{
+  "name": "tinycode",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A terminal coding agent reimplementing the pi SDK's business layer on pi-agent-core + pi-ai + pi-tui",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@earendil-works/pi-agent-core": "0.84.2",
+    "@earendil-works/pi-ai": "0.84.2",
+    "@earendil-works/pi-tui": "0.84.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
