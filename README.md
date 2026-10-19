@@ -4,28 +4,44 @@ A terminal coding agent that reimplements the pi SDK's business layer (`pi-codin
 
 Vocabulary lives in [GLOSSARY.md](GLOSSARY.md); the architecture decision is [docs/adr/0001-build-on-core-ai-tui.md](docs/adr/0001-build-on-core-ai-tui.md).
 
-## Current state — milestone #1 (in progress)
+## Current state — milestone #2 (in progress)
 
-**Working (verified on this machine):** the headless agent loop.
+**Verified headless (this machine):** the loop, the turn cap, and the TUI rendering.
 
-- `Agent` (from `pi-agent-core`) driven by a scripted `fauxProvider` model.
+- `Agent` driven by either a scripted `fauxProvider` (`--faux`) or DeepSeek (`deepseek-v4-flash`, key from `DEEPSEEK_API_KEY`).
 - The four SDK tools (`bash`/`read`/`edit`/`write`) bridged into `AgentTool`s over a shared `NodeExecutionEnv`.
-- Event streaming, tool execution, and clean termination all verified end-to-end (`bash` really ran and returned output).
+- A minimal `pi-tui` chat interface (input + streaming transcript + tool cards), headless-tested via an in-memory `Terminal`.
+- A `shouldStopAfterTurn` max-turns guardrail (default 30).
+
+**Not yet live-verified:** a real-TTY interactive run against DeepSeek — that needs `DEEPSEEK_API_KEY` and a terminal.
 
 ## Run
 
 ```bash
 npm install         # pinned 0.84.2 dependencies
-npm run dev         # headless smoke test (scripted fake model calls bash)
+npm run dev         # interactive TUI on DeepSeek (needs DEEPSEEK_API_KEY)
+npm run dev:faux    # interactive TUI on the scripted fake model (no key)
+npm test            # headless tests (loop, guardrail, TUI, bash timeout, snake)
 npm run typecheck   # tsc --noEmit
 ```
 
-## Remaining — milestone #1
+## Snake
 
-1. **Terminal UI on `pi-tui`** — the main from-scratch piece (input + streaming transcript + tool cards). Not yet live-verified: needs a real TTY.
-2. **`grep` / `find` / `ls`** — `pi-agent-core` ships only bash/read/edit/write.
-3. **DeepSeek provider** — OpenAI-compatible endpoint behind the same model seam; key from `DEEPSEEK_API_KEY`.
-4. **End-to-end run** — make a failing test pass, with a recorded transcript as evidence.
+A dependency-free terminal snake game (`snake.mjs`), alongside the agent loop.
+
+```bash
+npm run snake          # play in a terminal (arrows/WASD, p pause, r restart, q quit)
+npm run snake:smoke    # headless check: wall death, eating/growth, reverse-guard
+```
+
+The game state is exported (`createGame`, `tick`, `turn`, `render`, `frame`) and
+covered by `test/snake.test.ts`. Importing the module has no side effects.
+
+## Remaining
+
+1. **Live end-to-end** — run `npm run dev` in a real terminal, ask for a game, and watch DeepSeek drive the loop to a runnable program. The demo's acceptance bar is **runnable**, not correct (see GLOSSARY).
+2. **`grep` / `find` / `ls`** — deferred: `bash` covers them; structured search + provenance is a later differentiation step.
+3. **eval substrate** — deferred: the first task (with a verifier) is where "runnable" becomes "correct".
 
 ## Key integration facts (learned from SDK source)
 

@@ -1,66 +1,32 @@
-import { Agent } from "@earendil-works/pi-agent-core";
-import { NodeExecutionEnv } from "@earendil-works/pi-agent-core/node";
-import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
-import { createTools } from "./tools.ts";
-import { createFakeModelRuntime } from "./model.ts";
-import { SYSTEM_PROMPT } from "./prompt.ts";
+import { loadEnvFile } from "node:process";
+import { createAgent } from "./agent.ts";
+import { createDeepSeekModelRuntime, createFakeModelRuntime } from "./model.ts";
+import { runTui } from "./tui.ts";
+
+// Load ./.env so DEEPSEEK_API_KEY can live in a file instead of the shell.
+try {
+  loadEnvFile();
+} catch {
+  // No .env file — the key may still be provided via the environment.
+}
 
 /**
- * Headless smoke test: script the fake model to call `bash`, verify the agent
- * loop emits tool start/end events and terminates cleanly. This proves the
- * wiring (streamFn, tools, env, events) before the TUI is added.
+ * Interactive entry point. `--faux` runs the scripted fake model (no API key,
+ * useful for eyeballing the TUI); otherwise DeepSeek (key from `.env` or env).
  */
 async function main() {
-  const env = new NodeExecutionEnv({ cwd: process.cwd() });
-  const tools = createTools(env);
-
-  const runtime = createFakeModelRuntime([
-    fauxAssistantMessage([fauxToolCall("bash", { command: "echo hello-from-fake" })]),
-    fauxAssistantMessage("Tool ran. Done."),
-  ]);
-
-  const agent = new Agent({
-    streamFn: runtime.streamFn,
-    initialState: {
-      systemPrompt: SYSTEM_PROMPT,
-      model: runtime.model,
-      tools,
-      messages: [],
-    },
-  });
-
-  agent.subscribe((event) => {
-    switch (event.type) {
-      case "message_update": {
-        const e = event.assistantMessageEvent as any;
-        if (e && typeof e.delta === "string") {
-          console.log(`  [${e.type}] ${e.delta}`);
-        }
-        break;
-      }
-      case "tool_execution_start":
-        console.log(`[tool_start] ${event.toolName} ${JSON.stringify(event.args)}`);
-        break;
-      case "tool_execution_end": {
-        const r = event.result as any;
-        const text =
-          r?.content?.map((b: any) => b.text ?? "").join("") ?? JSON.stringify(r);
-        console.log(`[tool_end] ${event.toolName} isError=${event.isError} ${String(text).slice(0, 200)}`);
-        break;
-      }
-      case "agent_end":
-        console.log("[agent_end]");
-        break;
-      default:
-        console.log(`[${event.type}]`);
-    }
-  });
-
-  await agent.prompt("Run the command `echo hello-from-fake` using the bash tool.");
-  await agent.waitForIdle();
-
-  console.log(`remaining faux responses: ${runtime.getPendingResponseCount()}`);
-  console.log("DONE");
+  const useFaux = process.argv.includes("--faux");
+  if (!useFaux && !process.env.DEEPSEEK_API_KEY) {
+    console.error(
+      "DEEPSEEK_API_KEY is not set. Add it to the .env file:\n" +
+        "  DEEPSEEK_API_KEY=sk-...\n" +
+        "Or export it in your shell, or run the fake model: npm run dev:faux",
+    );
+    process.exit(1);
+  }
+  const runtime = useFaux ? createFakeModelRuntime([]) : createDeepSeekModelRuntime();
+  const agent = createAgent(runtime);
+  await runTui(agent);
 }
 
 main().catch((err) => {

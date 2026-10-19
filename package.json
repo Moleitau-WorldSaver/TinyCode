@@ -9,7 +9,11 @@
   },
   "scripts": {
     "dev": "tsx src/main.ts",
-    "typecheck": "tsc --noEmit"
+    "dev:faux": "tsx src/main.ts --faux",
+    "test": "node --import tsx --test test/smoke.test.ts test/guardrail.test.ts test/tui.test.ts test/bash-timeout.test.ts test/snake.test.ts",
+    "typecheck": "tsc --noEmit",
+    "snake": "node snake.mjs",
+    "snake:smoke": "node snake.mjs --smoke"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "0.84.2",

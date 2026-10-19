@@ -31,6 +31,9 @@ A frozen set of coding tasks, each with a starting state, an instruction, and an
 **verifier** (判分器):
 The automated check that decides whether a task's outcome is correct (e.g. a test suite passing).
 
+**runnable** (可运行):
+The demo milestone's acceptance bar: the agent's output merely starts and runs. Correctness, bugs, win-conditions, and fun are explicitly out of scope at this bar — judging those is what the **verifier** in the **eval substrate** is for, at a later milestone.
+
 ## Memory
 
 **dreaming**:
