@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx src/main.ts",
     "dev:faux": "tsx src/main.ts --faux",
-    "test": "node --import tsx --test test/smoke.test.ts test/guardrail.test.ts test/tui.test.ts test/bash-timeout.test.ts test/snake.test.ts",
+    "test": "node --import tsx --test test/smoke.test.ts test/guardrail.test.ts test/tui.test.ts test/bash-timeout.test.ts test/snake.test.ts test/guard.test.ts test/truncate.test.ts test/trace.test.ts",
     "typecheck": "tsc --noEmit",
     "snake": "node snake.mjs",
     "snake:smoke": "node snake.mjs --smoke"

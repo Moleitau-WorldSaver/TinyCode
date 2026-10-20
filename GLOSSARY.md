@@ -38,3 +38,17 @@ The demo milestone's acceptance bar: the agent's output merely starts and runs. 
 
 **dreaming**:
 A memory-consolidation technique the author wants to A/B-test against the eval substrate later. Definition pending.
+
+## Guardrails & trace
+
+**seam** (缝):
+A named point in the agent loop where behaviour can be intercepted or rewritten.
+
+**policy** (策略):
+A rule attached to a seam. The SDK provides the seams; TinyCode supplies the policies.
+
+**guard** (守卫):
+The policy that blocks destructive actions before they execute — hard-blocking some, escalating others to the user for a Y/N decision.
+
+**trace** (执行轨迹):
+The structured record of a run — tool calls, results, and turn boundaries — that the **eval substrate**'s **verifier** will later score against.

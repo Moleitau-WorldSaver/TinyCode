@@ -1,6 +1,10 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { loadEnvFile } from "node:process";
 import { createAgent } from "./agent.ts";
+import { createConfirmSlot } from "./guard.ts";
 import { createDeepSeekModelRuntime, createFakeModelRuntime } from "./model.ts";
+import { TraceRecorder } from "./trace.ts";
 import { runTui } from "./tui.ts";
 
 // Load ./.env so DEEPSEEK_API_KEY can live in a file instead of the shell.
@@ -25,8 +29,21 @@ async function main() {
     process.exit(1);
   }
   const runtime = useFaux ? createFakeModelRuntime([]) : createDeepSeekModelRuntime();
-  const agent = createAgent(runtime);
-  await runTui(agent);
+  const confirmSlot = createConfirmSlot();
+  const agent = createAgent(runtime, { confirm: confirmSlot.confirm });
+  const trace = new TraceRecorder(agent);
+  trace.start();
+  // Persist the session trace on exit, best-effort — never crash the app for it.
+  process.on("exit", () => {
+    try {
+      const dir = join(process.cwd(), "runs");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "trace.jsonl"), trace.toJsonl(), "utf8");
+    } catch {
+      // ignore
+    }
+  });
+  await runTui(agent, confirmSlot);
 }
 
 main().catch((err) => {
