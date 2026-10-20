@@ -35,7 +35,7 @@ export function createGuard(confirm: Confirm) {
       const danger = DANGEROUS.find((r) => r.test(cmd));
       if (danger) {
         const allowed = await confirm(`Allow this command? ${cmd} (${danger.reason})`);
-        return allowed ? undefined : { block: true, reason: "denied by user" };
+        return allowed ? undefined : { block: true, reason: `denied by user: ${danger.reason}` };
       }
       return undefined;
     }
@@ -44,7 +44,7 @@ export function createGuard(confirm: Confirm) {
       const path = String((ctx.args as { path?: unknown } | undefined)?.path ?? "");
       if (escapesCwd(path)) {
         const allowed = await confirm(`Allow writing outside the workspace? ${path}`);
-        return allowed ? undefined : { block: true, reason: "denied by user" };
+        return allowed ? undefined : { block: true, reason: "denied by user: write outside workspace" };
       }
       return undefined;
     }

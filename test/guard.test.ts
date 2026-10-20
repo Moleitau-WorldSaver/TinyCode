@@ -62,7 +62,7 @@ test("dangerous command escalates to the user and a denial blocks it", async () 
 test("dangerous command runs when the user says yes", async () => {
   const { confirm } = makeConfirm([true]);
   const runtime = createFakeModelRuntime([
-    fauxAssistantMessage([fauxToolCall("bash", { command: "echo allowed > /dev/null" })]),
+    fauxAssistantMessage([fauxToolCall("bash", { command: "rm --help" })]),
     fauxAssistantMessage("done"),
   ]);
   const agent = createAgent(runtime, { confirm });
