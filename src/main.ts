@@ -1,5 +1,6 @@
 import { loadEnvFile } from "node:process";
 import { createAgent } from "./agent.ts";
+import { createConfirmSlot } from "./guard.ts";
 import { createDeepSeekModelRuntime, createFakeModelRuntime } from "./model.ts";
 import { runTui } from "./tui.ts";
 
@@ -25,8 +26,9 @@ async function main() {
     process.exit(1);
   }
   const runtime = useFaux ? createFakeModelRuntime([]) : createDeepSeekModelRuntime();
-  const agent = createAgent(runtime);
-  await runTui(agent);
+  const confirmSlot = createConfirmSlot();
+  const agent = createAgent(runtime, { confirm: confirmSlot.confirm });
+  await runTui(agent, confirmSlot);
 }
 
 main().catch((err) => {

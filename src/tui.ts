@@ -8,13 +8,14 @@ import {
   type Terminal,
 } from "@earendil-works/pi-tui";
 import type { Agent, AgentEvent } from "@earendil-works/pi-agent-core";
+import type { Confirm, ConfirmSlot } from "./guard.ts";
 
 /**
  * Minimal interactive chat TUI: scrolling transcript on top, pinned input at the
  * bottom. Maps `AgentEvent` onto a component tree; streamed text uses a per-message
  * buffer because `Text` has no append. Tool calls render as a single status line.
  */
-export function mountChatTui(agent: Agent, terminal: Terminal) {
+export function mountChatTui(agent: Agent, terminal: Terminal, confirmSlot?: ConfirmSlot) {
   const tui = new TuiAltScreen(terminal);
 
   const transcript = new VStack();
@@ -84,8 +85,29 @@ export function mountChatTui(agent: Agent, terminal: Terminal) {
     }
   });
 
+  // Confirm mode: when the guard asks a Y/N question, the input temporarily reads
+  // the answer instead of a chat message. "y"/"yes" allows; anything else denies.
+  let pendingConfirm: ((ok: boolean) => void) | null = null;
+  if (confirmSlot) {
+    const askConfirm: Confirm = (message) => {
+      transcript.addChild(new Text(`❓ ${message} [y/N]`));
+      tui.requestRender();
+      return new Promise<boolean>((resolve) => {
+        pendingConfirm = resolve;
+      });
+    };
+    confirmSlot.setHandler(askConfirm);
+  }
+
   input.onSubmit = (value) => {
     input.setValue("");
+    if (pendingConfirm) {
+      const answer = value.trim().toLowerCase();
+      const resolve = pendingConfirm;
+      pendingConfirm = null;
+      resolve(answer === "y" || answer === "yes");
+      return;
+    }
     void agent.prompt(value);
   };
   input.onEscape = () => agent.abort();
@@ -95,8 +117,8 @@ export function mountChatTui(agent: Agent, terminal: Terminal) {
 }
 
 /** Run the interactive TUI on the real process terminal. Blocks until the process exits. */
-export async function runTui(agent: Agent): Promise<void> {
-  const { tui } = mountChatTui(agent, new ProcessTerminal());
+export async function runTui(agent: Agent, confirmSlot?: ConfirmSlot): Promise<void> {
+  const { tui } = mountChatTui(agent, new ProcessTerminal(), confirmSlot);
   tui.start();
   // The TUI drives itself from stdin; keep the process alive until interrupted.
   await new Promise<void>(() => {});
